@@ -100,21 +100,14 @@ const TestPostbackScreen: React.FC<TestPostbackScreenProps> = ({ onBack }) => {
             disabled={isLoading}
             className="w-full py-3 bg-transparent border-2 border-[#e51e2a] rounded-xl text-[#e51e2a] font-russo font-bold text-lg hover:bg-red-50 disabled:opacity-70 transition duration-300"
           >
-            {t('testFirstDeposit', { amount: '$10' })}
-          </button>
-          <button
-            onClick={() => handleAction(authService.testFailedDeposit, 2)}
-            disabled={isLoading}
-            className="w-full py-3 bg-transparent border-2 border-[#e51e2a] rounded-xl text-[#e51e2a] font-russo font-bold text-lg hover:bg-red-50 disabled:opacity-70 transition duration-300"
-          >
-            {t('testFailedDeposit', { amount: '$2' })}
+            {t('testFirstDeposit')}
           </button>
           <button
             onClick={() => handleAction(authService.testReDeposit, 5)}
             disabled={isLoading}
             className="w-full py-3 bg-transparent border-2 border-[#e51e2a] rounded-xl text-[#e51e2a] font-russo font-bold text-lg hover:bg-red-50 disabled:opacity-70 transition duration-300"
           >
-            {t('testReDeposit', { amount: '$5' })}
+            {t('testReDeposit')}
           </button>
 
           <div className="w-1/4 h-px bg-red-200 my-3 mx-auto"></div>

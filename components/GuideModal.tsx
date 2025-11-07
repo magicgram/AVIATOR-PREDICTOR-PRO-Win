@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -24,7 +23,7 @@ const GuideModal: React.FC<GuideModalProps> = ({ onClose }) => {
     const { t } = useLanguage();
 
     const handleCopy = () => {
-        navigator.clipboard.writeText('FSS23').then(() => {
+        navigator.clipboard.writeText('OGGY').then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
@@ -61,7 +60,7 @@ const GuideModal: React.FC<GuideModalProps> = ({ onClose }) => {
                 <div className="flex-grow">
                 <p>{t('guideStep4')}</p>
                 <div className="mt-2 flex items-center justify-between bg-red-100 p-2 rounded-md">
-                    <span className="font-mono text-lg text-red-600 font-bold">FSS23</span>
+                    <span className="font-mono text-lg text-red-600 font-bold">OGGY</span>
                     <button onClick={handleCopy} className="p-1 text-gray-500 hover:text-red-500 transition-colors" aria-label={t('copyPromocode')}>
                         {copied ? <CheckIcon className="w-5 h-5 text-green-500" /> : <CopyIcon className="w-5 h-5" />}
                     </button>

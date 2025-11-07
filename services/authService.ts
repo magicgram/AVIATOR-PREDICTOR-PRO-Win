@@ -108,43 +108,32 @@ const simulatePostback = async (params: Record<string, string>): Promise<string>
         // Route the postback simulation through the working /api/verify endpoint
         const response = await fetch(`/api/verify?${queryString}`);
         const result = await handleApiResponse(response);
-        return `SUCCESS: Simulated '${params.event}' for Player ID '${params.playerId}'. Server responded: ${result.message}`;
+        const id = params.user_id || params.playerId;
+        const event = params.event_type || params.event;
+        return `SUCCESS: Simulated '${event}' for Player ID '${id}'. Server responded: ${result.message}`;
     } catch (err: any) {
-         return `ERROR: Simulating '${params.event}'. ${err.message}`;
+         const event = params.event_type || params.event;
+         return `ERROR: Simulating '${event}'. ${err.message}`;
     }
 };
 
 export const testRegistration = (playerId: string): Promise<string> => {
-    return simulatePostback({ event: 'registration', playerId, status: 'registration' });
+    return simulatePostback({ event_type: 'registration', user_id: playerId });
 };
 
 export const testFirstDeposit = (playerId: string, amount: number): Promise<string> => {
     return simulatePostback({ 
-        event: 'deposit_confirmed', 
-        playerId, 
-        fdp_usd: String(amount), 
-        currency: 'USD',
-        status: 'fd_approved'
-    });
-};
-
-export const testFailedDeposit = (playerId: string, amount: number): Promise<string> => {
-    return simulatePostback({ 
-        event: 'deposit_rejected', 
-        playerId, 
-        fdp_usd: String(amount), 
-        currency: 'USD',
-        status: 'fd_rejected'
+        event_type: 'first_deposit', 
+        user_id: playerId, 
+        amount: String(amount)
     });
 };
 
 export const testReDeposit = (playerId: string, amount: number): Promise<string> => {
     return simulatePostback({
-        event: 'redeposit',
-        playerId,
-        dep_sum_usd: String(amount),
-        currency: 'USD',
-        status: 'active'
+        event_type: 'recurring_deposit',
+        user_id: playerId,
+        amount: String(amount)
     });
 };
 

@@ -1,7 +1,8 @@
+
 import { kv } from '@vercel/kv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const MINIMUM_DEPOSIT = 5;
+const MINIMUM_DEPOSIT = 10;
 const PREDICTIONS_AWARDED = 15;
 
 // --- Verification Logic ---
@@ -79,10 +80,13 @@ interface PostbackUserData {
 }
 
 async function handlePostback(req: VercelRequest, res: VercelResponse) {
-  const { event, playerId, fdp_usd, dep_sum_usd, status } = req.query;
+  const { event_type, user_id, amount } = req.query;
+
+  // Map user_id to playerId for internal consistency
+  const playerId = Array.isArray(user_id) ? user_id[0] : user_id;
 
   if (!playerId || typeof playerId !== 'string') {
-    return res.status(400).json({ error: 'Player ID is required and must be a string.' });
+    return res.status(400).json({ error: 'user_id is required and must be a string.' });
   }
 
   try {
@@ -90,20 +94,24 @@ async function handlePostback(req: VercelRequest, res: VercelResponse) {
     let userData: PostbackUserData = (await kv.get(key)) || { registered: false, deposit: 0, predictionsLeft: 0 };
     const oldDeposit = userData.deposit;
 
-    const eventStr = Array.isArray(event) ? event[0] : event;
+    const eventTypeStr = Array.isArray(event_type) ? event_type[0] : event_type;
 
-    switch (eventStr) {
+    switch (eventTypeStr) {
       case 'registration':
         userData.registered = true;
         console.log(`[POSTBACK] Registration for player: ${playerId}`);
         break;
       
-      case 'deposit_confirmed':
-        const fdpUsdStr = Array.isArray(fdp_usd) ? fdp_usd[0] : fdp_usd;
-        const depositAmount = parseFloat(fdpUsdStr || '') || 0;
+      case 'first_deposit':
+      case 'recurring_deposit':
+        const amountStr = Array.isArray(amount) ? (amount[0] as string) : (amount as string);
+        const depositAmount = parseFloat(amountStr || '0');
+
         if (depositAmount > 0) {
             userData.deposit += depositAmount;
-            userData.registered = true;
+            // A deposit implies the user must be registered.
+            userData.registered = true; 
+            
             // If the user's total deposit was below the minimum and now it's at or above, grant initial predictions.
             if (oldDeposit < MINIMUM_DEPOSIT && userData.deposit >= MINIMUM_DEPOSIT) {
                 userData.predictionsLeft = (userData.predictionsLeft || 0) + PREDICTIONS_AWARDED;
@@ -114,26 +122,12 @@ async function handlePostback(req: VercelRequest, res: VercelResponse) {
                 userData.predictionsLeft = (userData.predictionsLeft || 0) + PREDICTIONS_AWARDED;
                  console.log(`[POSTBACK] Subsequent deposit for ${playerId}. Awarded ${PREDICTIONS_AWARDED} more predictions.`);
             }
-            console.log(`[POSTBACK] Deposit confirmed for player: ${playerId}, Amount: $${depositAmount}, New Total: $${userData.deposit}, Predictions: ${userData.predictionsLeft}`);
+            console.log(`[POSTBACK] Deposit (${eventTypeStr}) confirmed for player: ${playerId}, Amount: $${depositAmount}, New Total: $${userData.deposit}, Predictions: ${userData.predictionsLeft}`);
         }
         break;
-
-      case 'redeposit':
-        const depSumUsdStr = Array.isArray(dep_sum_usd) ? dep_sum_usd[0] : dep_sum_usd;
-        const reDepositAmount = parseFloat(depSumUsdStr || '') || 0;
-        if (reDepositAmount > 0) {
-            userData.deposit += reDepositAmount;
-            userData.predictionsLeft = (userData.predictionsLeft || 0) + PREDICTIONS_AWARDED;
-            console.log(`[POSTBACK] Re-deposit for player: ${playerId}, Amount: $${reDepositAmount}, New Total: $${userData.deposit}, Predictions: ${userData.predictionsLeft}`);
-        }
-        break;
-      
-      case 'deposit_rejected':
-          console.log(`[POSTBACK] Deposit rejected for player: ${playerId}. Status: ${status}`);
-          break;
 
       default:
-        console.log(`[POSTBACK] Received unknown event type '${eventStr}' for player: ${playerId}`);
+        console.log(`[POSTBACK] Received unknown event type '${eventTypeStr}' for player: ${playerId}`);
         return res.status(200).json({ success: true, message: 'Unknown event type received but acknowledged.' });
     }
 
@@ -158,12 +152,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
   
-  const { action } = req.query;
+  const { action, playerId } = req.query;
 
   if (action === 'postback') {
     return handlePostback(req, res);
   }
   
-  // Default action is 'verify' for normal login flow
-  return handleVerify(req, res);
+  // If playerId is present, it's a verification request.
+  if (playerId) {
+    return handleVerify(req, res);
+  }
+
+  // Otherwise, it's a config request (the new default for GET).
+  const affiliateLink = process.env.AFFILIATE_LINK || '';
+  return res.status(200).json({ affiliateLink });
 }
