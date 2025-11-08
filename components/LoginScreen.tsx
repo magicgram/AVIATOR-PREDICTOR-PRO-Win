@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { verifyUser, VerificationResponse } from '../services/authService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -195,14 +196,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
     
     setIsRegistering(true);
     
-    // Open the affiliate link in a new tab for a more robust user experience.
-    window.open(url, '_blank', 'noopener,noreferrer');
-    
-    // The spinner provides feedback that the click was processed. 
-    // We can remove it after a short delay to prevent it from getting stuck.
-    setTimeout(() => {
-        setIsRegistering(false);
-    }, 1000);
+    // Redirect the current page to the affiliate link.
+    // This is more robust than window.open() which can be blocked by pop-up blockers,
+    // and directly addresses the infinite loading spinner issue.
+    window.location.href = url;
 
   }, [affiliateLink, t]);
 
