@@ -182,20 +182,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
   };
   
   const handleRegister = useCallback(() => {
-    if (affiliateLink) {
-      setIsRegistering(true);
-      const url = affiliateLink.trim();
-      if (url) {
-        window.location.href = url;
-      } else {
-        alert(t('registrationLinkNotAvailable'));
-        setIsRegistering(false);
-      }
-      // Reset button state in case navigation is blocked or fails
-      setTimeout(() => setIsRegistering(false), 2000);
-    } else {
+    if (!affiliateLink) {
       alert(t('registrationLinkNotAvailable'));
+      return;
     }
+
+    const url = affiliateLink.trim();
+    if (!url) {
+      alert(t('registrationLinkNotAvailable'));
+      return;
+    }
+    
+    setIsRegistering(true);
+    
+    // Open the affiliate link in a new tab for a more robust user experience.
+    window.open(url, '_blank', 'noopener,noreferrer');
+    
+    // The spinner provides feedback that the click was processed. 
+    // We can remove it after a short delay to prevent it from getting stuck.
+    setTimeout(() => {
+        setIsRegistering(false);
+    }, 1000);
+
   }, [affiliateLink, t]);
 
   const handleBackFromDeposit = useCallback(() => setNeedsDeposit(false), []);

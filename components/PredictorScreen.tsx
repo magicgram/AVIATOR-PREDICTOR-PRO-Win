@@ -259,15 +259,16 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout, affil
     if (affiliateLink) {
       const url = affiliateLink.trim();
       if (url) {
-        window.location.href = url;
-        onLogout();
+        // Open in a new tab instead of redirecting the current page.
+        // This prevents the user from being logged out and losing their place.
+        window.open(url, '_blank', 'noopener,noreferrer');
       } else {
         alert(t('depositLinkNotAvailable'));
       }
     } else {
       alert(t('depositLinkNotAvailable'));
     }
-  }, [affiliateLink, onLogout, t]);
+  }, [affiliateLink, t]);
   
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleNavigate = useCallback((view) => { setCurrentView(view); setIsSidebarOpen(false); }, []);
