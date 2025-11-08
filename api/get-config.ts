@@ -16,7 +16,15 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Fetch the affiliate link from environment variables.
-  const affiliateLink = process.env.AFFILIATE_LINK || '';
+  let affiliateLink = process.env.AFFILIATE_LINK || '';
+
+  if (affiliateLink) {
+    affiliateLink = affiliateLink.trim();
+    // Ensure it's a full URL if it's not empty after trimming
+    if (affiliateLink && !/^(https?:\/\/)/i.test(affiliateLink)) {
+      affiliateLink = `https://${affiliateLink}`;
+    }
+  }
 
   return res.status(200).json({ affiliateLink });
 }
