@@ -187,7 +187,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
     if (affiliateLink) {
       setIsRegistering(true);
       setTimeout(() => {
-        window.location.href = affiliateLink;
+        let absoluteUrl = affiliateLink;
+        if (!absoluteUrl.startsWith('http://') && !absoluteUrl.startsWith('https://')) {
+          absoluteUrl = `https://${absoluteUrl}`;
+        }
+        window.location.href = absoluteUrl;
         setTimeout(() => setIsRegistering(false), 2000);
       }, 300);
     } else {

@@ -257,7 +257,11 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout, affil
 
   const handleDepositRedirect = useCallback(() => {
     if (affiliateLink) {
-        window.location.href = affiliateLink;
+        let absoluteUrl = affiliateLink;
+        if (!absoluteUrl.startsWith('http://') && !absoluteUrl.startsWith('https://')) {
+          absoluteUrl = `https://${absoluteUrl}`;
+        }
+        window.location.href = absoluteUrl;
         onLogout();
     } else {
         alert(t('depositLinkNotAvailable'));
