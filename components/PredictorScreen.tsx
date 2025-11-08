@@ -255,7 +255,7 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout }) => 
 
   const handleDepositRedirect = useCallback(async () => {
     try {
-        const response = await fetch('/api/redirect');
+        const response = await fetch('/api/get-affiliate-link');
         const data = await response.json();
         if (response.ok && data.success) {
             if (window.top) {

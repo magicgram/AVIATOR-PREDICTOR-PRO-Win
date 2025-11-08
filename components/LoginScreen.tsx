@@ -183,7 +183,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onOpenGuide, 
     setError(null); // Clear previous errors
     try {
       // The endpoint now returns JSON with the link instead of redirecting directly.
-      const response = await fetch('/api/redirect');
+      const response = await fetch('/api/get-affiliate-link');
       const data = await response.json();
 
       if (response.ok && data.success) {
