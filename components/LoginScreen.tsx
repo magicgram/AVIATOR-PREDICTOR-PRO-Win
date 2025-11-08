@@ -1,11 +1,9 @@
-
 import React, { useState, useCallback } from 'react';
 import { verifyUser, VerificationResponse } from '../services/authService';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface LoginScreenProps {
   onLoginSuccess: (playerId: string, predictionsLeft: number) => void;
-  affiliateLink: string | null;
   onOpenSidebar: () => void;
   onOpenGuide: () => void;
 }
@@ -33,8 +31,7 @@ const DepositMessage: React.FC<{
   onBack: () => void;
   onRegister: () => void;
   isRegistering: boolean;
-  affiliateLink: string | null;
-}> = React.memo(({ onBack, onRegister, isRegistering, affiliateLink }) => {
+}> = React.memo(({ onBack, onRegister, isRegistering }) => {
   const { t } = useLanguage();
   return (
     <div className="w-full max-w-sm mx-auto text-white text-center animate-fade-in-up">
@@ -47,7 +44,7 @@ const DepositMessage: React.FC<{
       <div className="space-y-4">
         <button
           onClick={onRegister}
-          disabled={!affiliateLink || isRegistering}
+          disabled={isRegistering}
           className="w-full py-3 bg-white rounded-lg text-red-500 font-bold text-lg hover:bg-gray-200 transition-all duration-300 disabled:opacity-50 shadow-[0_4px_10px_rgba(150,20,20,0.4)]"
         >
           {isRegistering ? (
@@ -88,8 +85,7 @@ const ReDepositMessage: React.FC<{
   onBack: () => void;
   onRegister: () => void;
   isRegistering: boolean;
-  affiliateLink: string | null;
-}> = React.memo(({ onBack, onRegister, isRegistering, affiliateLink }) => {
+}> = React.memo(({ onBack, onRegister, isRegistering }) => {
   const { t } = useLanguage();
   return (
     <div className="w-full max-w-sm mx-auto text-white text-center animate-fade-in-up">
@@ -98,7 +94,7 @@ const ReDepositMessage: React.FC<{
       <div className="space-y-4">
         <button
           onClick={onRegister}
-          disabled={!affiliateLink || isRegistering}
+          disabled={isRegistering}
           className="w-full py-3 bg-white rounded-lg text-red-500 font-bold text-lg hover:bg-gray-200 transition-all duration-300 disabled:opacity-50 shadow-[0_4px_10px_rgba(150,20,20,0.4)]"
         >
           {isRegistering ? (
@@ -127,7 +123,7 @@ const ReDepositMessage: React.FC<{
 });
 
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink, onOpenGuide, onOpenSidebar }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onOpenGuide, onOpenSidebar }) => {
   const [playerId, setPlayerId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -183,25 +179,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
   };
   
   const handleRegister = useCallback(() => {
-    if (!affiliateLink) {
-      alert(t('registrationLinkNotAvailable'));
-      return;
-    }
-
-    const url = affiliateLink.trim();
-    if (!url) {
-      alert(t('registrationLinkNotAvailable'));
-      return;
-    }
-    
     setIsRegistering(true);
     
-    // Redirect the current page to the affiliate link.
-    // This is more robust than window.open() which can be blocked by pop-up blockers,
-    // and directly addresses the infinite loading spinner issue.
-    window.location.href = url;
-
-  }, [affiliateLink, t]);
+    // Navigate to a dedicated API endpoint that handles the server-side redirect.
+    // This is more robust as the server directly reads the environment variable.
+    // Use window.top.location.href to break out of potential iframes.
+    if (window.top) {
+      window.top.location.href = '/api/redirect';
+    } else {
+      window.location.href = '/api/redirect';
+    }
+  }, []);
 
   const handleBackFromDeposit = useCallback(() => setNeedsDeposit(false), []);
   const handleBackFromReDeposit = useCallback(() => setNeedsReDeposit(false), []);
@@ -210,11 +198,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
     <div className="w-full min-h-screen flex flex-col items-center justify-between relative overflow-hidden bg-[#e51e2a]">
       {needsDeposit ? (
           <div className="flex-grow flex items-center justify-center p-4">
-            <DepositMessage onBack={handleBackFromDeposit} onRegister={handleRegister} isRegistering={isRegistering} affiliateLink={affiliateLink} />
+            <DepositMessage onBack={handleBackFromDeposit} onRegister={handleRegister} isRegistering={isRegistering} />
           </div>
       ) : needsReDeposit ? (
           <div className="flex-grow flex items-center justify-center p-4">
-            <ReDepositMessage onBack={handleBackFromReDeposit} onRegister={handleRegister} isRegistering={isRegistering} affiliateLink={affiliateLink} />
+            <ReDepositMessage onBack={handleBackFromReDeposit} onRegister={handleRegister} isRegistering={isRegistering} />
           </div>
       ) : (
           <>
@@ -281,7 +269,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
                     <p className="font-poppins text-white text-xs mb-2 font-bold tracking-wider">{t('dontHaveAccount').toUpperCase()}</p>
                     <button
                         onClick={handleRegister}
-                        disabled={!affiliateLink || isRegistering}
+                        disabled={isRegistering}
                         className="w-full py-3 bg-white rounded-xl text-[#e51e2a] font-russo font-bold text-xl tracking-wider hover:bg-gray-200 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
                     >
                         {isRegistering ? (

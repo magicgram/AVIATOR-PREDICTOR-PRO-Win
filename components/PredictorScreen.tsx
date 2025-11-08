@@ -10,7 +10,6 @@ import { useLanguage } from '../contexts/LanguageContext';
 interface PredictorScreenProps {
   user: User;
   onLogout: () => void;
-  affiliateLink: string | null;
 }
 
 const MenuIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -34,7 +33,7 @@ const GuideIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 // --- Sub-components moved outside and memoized for performance ---
 
-const LimitReachedView = React.memo(({ handleDepositRedirect, affiliateLink }: { handleDepositRedirect: () => void; affiliateLink: string | null; }) => {
+const LimitReachedView = React.memo(({ handleDepositRedirect }: { handleDepositRedirect: () => void; }) => {
   const { t } = useLanguage();
   return (
     <div className="text-center p-8 bg-white text-gray-800 rounded-lg shadow-xl w-full max-w-md">
@@ -42,7 +41,6 @@ const LimitReachedView = React.memo(({ handleDepositRedirect, affiliateLink }: {
       <p className="mt-4 text-gray-600 font-poppins">{t('limitReachedText')}</p>
       <button 
         onClick={handleDepositRedirect}
-        disabled={!affiliateLink}
         className="mt-6 w-full py-3 bg-[#f8d7da] rounded-xl text-[#e51e2a] font-russo font-bold text-xl tracking-wider hover:bg-[#f6c8cc] disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
       >
         {t('depositNow')}
@@ -149,7 +147,7 @@ const PredictorView = React.memo((props: {
   );
 });
 
-const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout, affiliateLink }) => {
+const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout }) => {
   const [prediction, setPrediction] = useState<string | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [isPredicting, setIsPredicting] = useState(false);
@@ -256,19 +254,13 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout, affil
   }, [isPredicting]);
 
   const handleDepositRedirect = useCallback(() => {
-    if (affiliateLink) {
-      const url = affiliateLink.trim();
-      if (url) {
-        // Open in a new tab instead of redirecting the current page.
-        // This prevents the user from being logged out and losing their place.
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        alert(t('depositLinkNotAvailable'));
-      }
+    // Navigate to the dedicated redirect endpoint.
+    if (window.top) {
+      window.top.location.href = '/api/redirect';
     } else {
-      alert(t('depositLinkNotAvailable'));
+      window.location.href = '/api/redirect';
     }
-  }, [affiliateLink, t]);
+  }, []);
   
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleNavigate = useCallback((view) => { setCurrentView(view); setIsSidebarOpen(false); }, []);
@@ -278,7 +270,7 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout, affil
   const handleBackToPredictor = useCallback(() => setCurrentView('predictor'), []);
 
   if (predictionsLeft <= 0 && !isPredicting) {
-    return <LimitReachedView handleDepositRedirect={handleDepositRedirect} affiliateLink={affiliateLink} />;
+    return <LimitReachedView handleDepositRedirect={handleDepositRedirect} />;
   }
   
   return (

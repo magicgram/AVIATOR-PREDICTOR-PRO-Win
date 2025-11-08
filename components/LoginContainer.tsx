@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import TestPostbackScreen from './TestPostbackScreen';
@@ -9,10 +7,9 @@ import GuideModal from './GuideModal';
 
 interface LoginContainerProps {
   onLoginSuccess: (playerId: string, predictionsLeft: number) => void;
-  affiliateLink: string | null;
 }
 
-const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess, affiliateLink }) => {
+const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState('login'); // 'login' or 'testPostback'
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -63,7 +60,6 @@ const LoginContainer: React.FC<LoginContainerProps> = ({ onLoginSuccess, affilia
       ) : (
         <LoginScreen 
             onLoginSuccess={onLoginSuccess}
-            affiliateLink={affiliateLink}
             onOpenSidebar={handleOpenSidebar}
             onOpenGuide={handleOpenGuide}
         />
