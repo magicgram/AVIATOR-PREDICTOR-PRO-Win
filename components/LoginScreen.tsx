@@ -183,15 +183,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onOpenGuide, 
     setError(null); // Clear previous errors
     try {
       // The endpoint now returns JSON with the link instead of redirecting directly.
-      const response = await fetch('/api/get-affiliate-link');
+      const response = await fetch('/api/redirect');
       const data = await response.json();
 
       if (response.ok && data.success) {
         // Use window.top.location.href to break out of potential iframes.
         if (window.top) {
-          window.top.location.href = data.affiliateLink;
+          window.top.location.href = data.link;
         } else {
-          window.location.href = data.affiliateLink;
+          window.location.href = data.link;
         }
       } else {
         // Handle the case where the link is not configured on the server.

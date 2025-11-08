@@ -255,13 +255,13 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout }) => 
 
   const handleDepositRedirect = useCallback(async () => {
     try {
-        const response = await fetch('/api/get-affiliate-link');
+        const response = await fetch('/api/redirect');
         const data = await response.json();
         if (response.ok && data.success) {
             if (window.top) {
-                window.top.location.href = data.affiliateLink;
+                window.top.location.href = data.link;
             } else {
-                window.location.href = data.affiliateLink;
+                window.location.href = data.link;
             }
         } else {
             alert(data.message || t('depositLinkNotAvailable'));
