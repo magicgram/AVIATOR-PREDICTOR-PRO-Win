@@ -16,7 +16,7 @@ const App: React.FC = () => {
     // Fetch the affiliate link and admin feature status from our API endpoint
     const fetchConfig = async () => {
       try {
-        const response = await fetch('/api/verify');
+        const response = await fetch('/api/get-config');
         if (!response.ok) {
           throw new Error('Failed to fetch config');
         }

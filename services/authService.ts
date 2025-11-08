@@ -1,3 +1,4 @@
+
 // This service now makes real API calls to the backend.
 
 export interface VerificationResponse {
@@ -101,12 +102,11 @@ const handleApiResponse = async (response: Response): Promise<any> => {
 };
 
 const simulatePostback = async (params: Record<string, string>): Promise<string> => {
-    // Add the 'action' parameter to route the request on the backend
-    const allParams = { ...params, action: 'postback' };
-    const queryString = new URLSearchParams(allParams).toString();
+    // The action is now determined by the endpoint, so 'action' param is not needed.
+    const queryString = new URLSearchParams(params).toString();
     try {
-        // Route the postback simulation through the working /api/verify endpoint
-        const response = await fetch(`/api/verify?${queryString}`);
+        // Route the postback simulation through the new /api/postback endpoint
+        const response = await fetch(`/api/postback?${queryString}`);
         const result = await handleApiResponse(response);
         const id = params.user_id || params.playerId;
         const event = params.event_type || params.event;
