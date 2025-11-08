@@ -253,14 +253,24 @@ const PredictorScreen: React.FC<PredictorScreenProps> = ({ user, onLogout }) => 
     setIsRoundComplete(false);
   }, [isPredicting]);
 
-  const handleDepositRedirect = useCallback(() => {
-    // Navigate to the dedicated redirect endpoint.
-    if (window.top) {
-      window.top.location.href = '/api/redirect';
-    } else {
-      window.location.href = '/api/redirect';
+  const handleDepositRedirect = useCallback(async () => {
+    try {
+        const response = await fetch('/api/redirect');
+        const data = await response.json();
+        if (response.ok && data.success) {
+            if (window.top) {
+                window.top.location.href = data.affiliateLink;
+            } else {
+                window.location.href = data.affiliateLink;
+            }
+        } else {
+            alert(data.message || t('depositLinkNotAvailable'));
+        }
+    } catch (error) {
+        console.error('Failed to fetch deposit link:', error);
+        alert(t('unexpectedErrorOccurred'));
     }
-  }, []);
+  }, [t]);
   
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleNavigate = useCallback((view) => { setCurrentView(view); setIsSidebarOpen(false); }, []);

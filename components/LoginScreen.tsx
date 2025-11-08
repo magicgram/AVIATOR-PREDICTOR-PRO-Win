@@ -178,18 +178,33 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onOpenGuide, 
     }
   };
   
-  const handleRegister = useCallback(() => {
+  const handleRegister = useCallback(async () => {
     setIsRegistering(true);
-    
-    // Navigate to a dedicated API endpoint that handles the server-side redirect.
-    // This is more robust as the server directly reads the environment variable.
-    // Use window.top.location.href to break out of potential iframes.
-    if (window.top) {
-      window.top.location.href = '/api/redirect';
-    } else {
-      window.location.href = '/api/redirect';
+    setError(null); // Clear previous errors
+    try {
+      // The endpoint now returns JSON with the link instead of redirecting directly.
+      const response = await fetch('/api/redirect');
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Use window.top.location.href to break out of potential iframes.
+        if (window.top) {
+          window.top.location.href = data.affiliateLink;
+        } else {
+          window.location.href = data.affiliateLink;
+        }
+      } else {
+        // Handle the case where the link is not configured on the server.
+        // The error is now displayed in the UI instead of crashing.
+        setError(data.message || t('registrationLinkNotAvailable'));
+        setIsRegistering(false);
+      }
+    } catch (error) {
+      console.error('Failed to fetch registration link:', error);
+      setError(t('unexpectedErrorOccurred'));
+      setIsRegistering(false);
     }
-  }, []);
+  }, [t]);
 
   const handleBackFromDeposit = useCallback(() => setNeedsDeposit(false), []);
   const handleBackFromReDeposit = useCallback(() => setNeedsReDeposit(false), []);
