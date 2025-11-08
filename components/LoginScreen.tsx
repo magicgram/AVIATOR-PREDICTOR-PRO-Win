@@ -1,5 +1,4 @@
 
-
 import React, { useState, useCallback } from 'react';
 import { verifyUser, VerificationResponse } from '../services/authService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -187,12 +186,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, affiliateLink
     if (affiliateLink) {
       setIsRegistering(true);
       setTimeout(() => {
-        let absoluteUrl = affiliateLink;
-        if (!absoluteUrl.startsWith('http://') && !absoluteUrl.startsWith('https://')) {
-          absoluteUrl = `https://${absoluteUrl}`;
+        let url = affiliateLink.trim();
+        if (url) {
+          if (!/^(https?:\/\/)/i.test(url)) {
+            url = `https://${url}`;
+          }
+          window.location.href = url;
+        } else {
+          alert(t('registrationLinkNotAvailable'));
         }
-        window.location.href = absoluteUrl;
-        setTimeout(() => setIsRegistering(false), 2000);
+        setTimeout(() => setIsRegistering(false), 2000); // Reset button state
       }, 300);
     } else {
       alert(t('registrationLinkNotAvailable'));
