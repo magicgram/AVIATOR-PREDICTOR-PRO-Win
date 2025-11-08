@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import * as authService from '../services/authService';
 import { useLanguage } from '../contexts/LanguageContext';
+import PostbackGuide from './PostbackGuide';
 
 interface TestPostbackScreenProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ const TestPostbackScreen: React.FC<TestPostbackScreenProps> = ({ onBack }) => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const { t } = useLanguage();
 
   const handleAction = async (action: (id: string, amount?: any) => Promise<string>, amount?: number) => {
@@ -44,6 +46,10 @@ const TestPostbackScreen: React.FC<TestPostbackScreenProps> = ({ onBack }) => {
         setIsLoading(false);
     }
   };
+  
+  if (showGuide) {
+      return <PostbackGuide onBack={() => setShowGuide(false)} />;
+  }
 
   return (
     <div className="w-full h-full flex flex-col text-gray-800">
@@ -58,9 +64,18 @@ const TestPostbackScreen: React.FC<TestPostbackScreenProps> = ({ onBack }) => {
       </header>
 
       <div className="flex-grow overflow-y-auto px-1">
-        <p className="text-center text-gray-500 text-sm mb-6 font-poppins">
+        <p className="text-center text-gray-500 text-sm mb-4 font-poppins">
           {t('postbackToolDescription')}
         </p>
+        
+        <div className="text-center mb-6">
+            <button
+                onClick={() => setShowGuide(true)}
+                className="px-4 py-2 text-sm bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-colors"
+            >
+                {t('viewSetupGuide')}
+            </button>
+        </div>
 
         <div className="space-y-4">
           <div>

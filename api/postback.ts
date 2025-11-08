@@ -11,6 +11,19 @@ interface UserData {
   predictionsLeft: number;
 }
 
+// Helper function to find a parameter value from a list of possible keys
+const findParam = (query: VercelRequest['query'], aliases: string[]): string | undefined => {
+    for (const alias of aliases) {
+        const value = query[alias];
+        if (value) {
+            const param = Array.isArray(value) ? value[0] : value;
+            // Ensure we don't return an empty string if the parameter is present but empty
+            if (param) return param;
+        }
+    }
+    return undefined;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*'); 
@@ -21,22 +34,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  const { 
-    event_type, user_id, amount, // Standard params
-    goal, subid1, sub1, payout   // Potential alternative params
-  } = req.query;
+  const playerIdAliases = ['sub1', 'subid1', 'user_id', 'player_id', 'subid', 'visitor_id'];
+  const eventTypeAliases = ['goal', 'event_type', 'event', 'status'];
+  const amountAliases = ['amount', 'payout', 'revenue'];
 
-  // Helper to safely get a query parameter as a string from string | string[]
-  const getQueryParam = (param: string | string[] | undefined): string | undefined => {
-      return Array.isArray(param) ? param[0] : param;
-  };
-
-  const playerId = getQueryParam(user_id) || getQueryParam(subid1) || getQueryParam(sub1);
-  const eventType = getQueryParam(event_type) || getQueryParam(goal);
-  const amountStr = getQueryParam(amount) || getQueryParam(payout);
+  const playerId = findParam(req.query, playerIdAliases);
+  const eventType = findParam(req.query, eventTypeAliases);
+  const amountStr = findParam(req.query, amountAliases);
 
   if (!playerId || typeof playerId !== 'string') {
-    return res.status(400).json({ error: 'A valid user identifier (e.g., user_id, subid1, or sub1) is required.' });
+    return res.status(400).json({ error: 'A valid user identifier (e.g., sub1, user_id) is required.' });
   }
 
   try {
@@ -44,11 +51,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let userData: UserData = (await kv.get(key)) || { registered: false, deposit: 0, predictionsLeft: 0 };
     const oldDeposit = userData.deposit;
 
-    // Standardize common affiliate event names
+    // Standardize common affiliate event names, case-insensitively
     let standardizedEventType = '';
-    if (eventType === 'registration' || eventType === 'reg') {
+    const lowerEventType = eventType?.toLowerCase();
+    
+    if (lowerEventType === 'registration' || lowerEventType === 'reg') {
         standardizedEventType = 'registration';
-    } else if (['first_deposit', 'recurring_deposit', 'dep', 'ftd'].includes(eventType || '')) {
+    } else if (['first_deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'].includes(lowerEventType || '')) {
         standardizedEventType = 'deposit';
     }
 

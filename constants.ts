@@ -7,24 +7,11 @@
 // POSTBACK CONFIGURATION - VERY IMPORTANT!
 // =================================================================================
 //
-// To fix issues with user registration and deposits not being detected, the
-// postback URL has been updated and made more robust.
+// For detailed and copy-pasteable postback URLs, please visit the
+// 'Test Postback' section in the app's side menu and click on 'View Setup Guide'.
 //
-// Please update your affiliate network (1win, etc.) postback/S2S settings to
-// use the following URL:
-//
-// https://<YOUR_APP_DOMAIN>/api/postback
-//
-// The app will automatically listen for common parameters:
-// - User ID: `user_id` or `subid1`
-// - Event Type: `event_type` or `goal` (e.g., 'reg', 'dep', 'ftd')
-// - Amount: `amount` or `payout`
-//
-// Example Postback URL for Registration:
-// https://<YOUR_APP_DOMAIN>/api/postback?subid1={user_id}&goal=reg
-//
-// Example Postback URL for Deposit:
-// https://<YOUR_APP_DOMAIN>/api/postback?subid1={user_id}&goal=dep&payout={amount}
+// The in-app guide provides the exact URLs needed for your affiliate network,
+// automatically including your app's domain.
 //
 // =================================================================================
 
