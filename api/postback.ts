@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (lowerEventType === 'registration' || lowerEventType === 'reg') {
         standardizedEventType = 'registration';
-    } else if (['first_deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'].includes(lowerEventType || '')) {
+    } else if (['first_deposit', 'first-deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'].includes(lowerEventType || '')) {
         standardizedEventType = 'deposit';
     }
 

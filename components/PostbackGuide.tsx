@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -53,9 +52,9 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
         setDomain(window.location.origin);
     }, []);
 
-    const regUrl = `${domain}/api/postback?goal=reg&sub1={sub1}&event_id={event_id}`;
-    const ftdUrl = `${domain}/api/postback?goal=ftd&sub1={sub1}&amount={amount}&transaction_id={transaction_id}`;
-    const depUrl = `${domain}/api/postback?goal=dep&sub1={sub1}&amount={amount}&transaction_id={transaction_id}`;
+    const regUrl = `${domain}/api/postback?event_type=registration&user_id={user_id}`;
+    const ftdUrl = `${domain}/api/postback?event_type=first_deposit&user_id={user_id}&amount={amount}`;
+    const depUrl = `${domain}/api/postback?event_type=recurring_deposit&user_id={user_id}&amount={amount}`;
 
     return (
         <div className="w-full h-full flex flex-col text-gray-800 font-poppins">
@@ -70,7 +69,7 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
             </header>
             
             <div className="flex-grow overflow-y-auto px-1 space-y-6">
-                <p className="text-center text-gray-500 text-sm">{t('postbackGuideDescription')}</p>
+                <p className="text-center text-gray-500 text-sm" dangerouslySetInnerHTML={{ __html: t('postbackGuideDescription') }}/>
                 
                 {domain && (
                     <div className="p-2 text-center bg-yellow-100 border border-yellow-200 rounded-lg text-xs text-yellow-800">
@@ -78,19 +77,11 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
                     </div>
                 )}
 
-                {/* Step 1 */}
                 <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
                     <h2 className="font-bold text-gray-800">{t('postbackGuideStep1Title')}</h2>
                     <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: t('postbackGuideStep1Desc') }} />
-                    <div className="pt-1">
-                        <p className="text-xs text-gray-500 mb-1">{t('postbackGuideStep1Example')}</p>
-                        <code className="block text-xs text-blue-600 bg-blue-100 p-2 rounded break-all">
-                            https://your-affiliate-link.com/?promo=123<strong className="text-red-600">&amp;sub1={'{user_id}'}</strong>
-                        </code>
-                    </div>
                 </div>
 
-                {/* Step 2 */}
                 <div className="space-y-4">
                     <h2 className="text-center font-russo text-lg text-gray-800">{t('postbackGuideStep2Title')}</h2>
                     
