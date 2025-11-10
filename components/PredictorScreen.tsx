@@ -125,7 +125,6 @@ const PredictorView = React.memo((props: {
       </main>
 
       <footer className="space-y-3">
-         <p className="text-center text-gray-500 font-poppins">{t('predictionsLeft', { count: props.predictionsLeft })}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button 
             onClick={props.onGetSignal}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { languages } from '../lib/i18n';
+import { languages, currencyData } from '../lib/i18n';
 
 const UserIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -23,6 +23,12 @@ const TestIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 const LanguageIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
+    </svg>
+);
+
+const CurrencyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
 );
 
@@ -59,8 +65,9 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, onLogout, isLoggedIn, playerId, onProfilePictureChange, onTestPostbackClick }) => {
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, currency, setCurrency, t } = useLanguage();
 
   useEffect(() => {
     if (playerId) {
@@ -98,7 +105,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, onLogout
   const handleLanguageSelect = (langCode: string) => {
     setLanguage(langCode);
     setIsLangMenuOpen(false);
-    onClose();
+  };
+
+  const handleCurrencySelect = (currencyCode: string) => {
+    setCurrency(currencyCode);
+    setIsCurrencyMenuOpen(false);
   };
 
   return (
@@ -192,6 +203,33 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, onNavigate, onLogout
                             )}
                         </div>
                     )}
+                    <div>
+                        <button
+                            onClick={() => setIsCurrencyMenuOpen(!isCurrencyMenuOpen)}
+                            className="w-full flex items-center justify-between gap-4 p-3 rounded-lg text-left text-gray-700 hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
+                        >
+                            <div className="flex items-center gap-4">
+                                <CurrencyIcon className="w-6 h-6" />
+                                <span className="font-semibold">{t('currency')}</span>
+                            </div>
+                            <svg className={`w-5 h-5 transition-transform ${isCurrencyMenuOpen ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        {isCurrencyMenuOpen && (
+                            <div className="mt-2 pl-4 max-h-60 overflow-y-auto">
+                                {Object.entries(currencyData).map(([code, data]) => (
+                                    <button
+                                        key={code}
+                                        onClick={() => handleCurrencySelect(code)}
+                                        className={`w-full text-left p-2 rounded-md text-sm transition-colors ${currency === code ? 'bg-red-100 text-red-600' : 'text-gray-600 hover:bg-red-50'}`}
+                                    >
+                                        {data.symbol} {data.name} ({code})
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </nav>
             

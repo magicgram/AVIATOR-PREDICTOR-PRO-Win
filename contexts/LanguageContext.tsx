@@ -4,6 +4,8 @@ import { translations, currencyData } from '../lib/i18n';
 interface LanguageContextType {
   language: string;
   setLanguage: (language: string) => void;
+  currency: string;
+  setCurrency: (currency: string) => void;
   t: (key: string, vars?: { [key: string]: string | number }) => string;
 }
 
@@ -11,17 +13,26 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<string>(() => {
-    // Check for saved language in localStorage, default to 'en'
     return localStorage.getItem('language') || 'en';
+  });
+  const [currency, setCurrencyState] = useState<string>(() => {
+    return localStorage.getItem('currency') || 'INR';
   });
 
   useEffect(() => {
-    // Save language to localStorage whenever it changes
     localStorage.setItem('language', language);
   }, [language]);
 
+  useEffect(() => {
+    localStorage.setItem('currency', currency);
+  }, [currency]);
+
   const setLanguage = (langCode: string) => {
     setLanguageState(langCode);
+  };
+
+  const setCurrency = (currencyCode: string) => {
+    setCurrencyState(currencyCode);
   };
 
   const t = useCallback((key: string, vars?: { [key: string]: string | number }): string => {
@@ -35,31 +46,30 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     const formatCurrency = (amountInr: number): string => {
-        if (language === 'en' || language === 'hi') {
-          return `₹${amountInr}`;
-        }
-        const currency = currencyData[language];
-        if (currency) {
-          const convertedAmount = amountInr * currency.rate;
+        const selectedCurrency = currencyData[currency];
+        if (selectedCurrency) {
+          const convertedAmount = amountInr * selectedCurrency.rate;
           const roundedAmount = Math.round(convertedAmount);
-           if (['id', 'vi', 'ja', 'ko', 'fa', 'my', 'uz', 'hu'].includes(language)) {
-            return `${currency.symbol}${roundedAmount.toLocaleString('en-US')}`;
+          // Special formatting for currencies that typically don't use decimals
+          if (['IDR', 'VND', 'JPY', 'KRW', 'UZS', 'HUF'].map(c => c.toLowerCase()).includes(currency.toLowerCase())) {
+            return `${selectedCurrency.symbol}${roundedAmount.toLocaleString('en-US')}`;
           }
-          return `${currency.symbol}${roundedAmount}`;
+          return `${selectedCurrency.symbol}${roundedAmount}`;
         }
-        // Fallback to USD if no specific currency data is available.
-        const amountUsd = Math.round(amountInr / 83); // Approx 1 USD = 83 INR
-        return `$${amountUsd}`;
+        // Fallback to INR if something is wrong
+        return `₹${amountInr}`;
     };
     
-    translation = translation.replace(/{{amount500}}/g, formatCurrency(500));
-    translation = translation.replace(/{{amount400}}/g, formatCurrency(400));
+    // Base amount for first deposit is 1000 INR
+    translation = translation.replace(/{{minDepositAmount}}/g, formatCurrency(1000));
+    // Base amount for re-deposit is 400 INR (approx $5)
+    translation = translation.replace(/{{minReDepositAmount}}/g, formatCurrency(400));
 
     return translation;
-  }, [language]);
+  }, [language, currency]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, currency, setCurrency, t }}>
       {children}
     </LanguageContext.Provider>
   );
