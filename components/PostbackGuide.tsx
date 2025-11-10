@@ -53,9 +53,9 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
         setDomain(window.location.origin);
     }, []);
 
-    const regUrl = `${domain}/api/postback?event_type=registration&text={user_id}:{country}`;
-    const ftdUrl = `${domain}/api/postback?event_type=first_deposit&text={user_id}:{country}:{amount}`;
-    const depUrl = `${domain}/api/postback?event_type=recurring_deposit&text={user_id}:{country}:{amount}`;
+    const regUrl = `${domain}/api/postback?event_type=registration&user_id={user_id}`;
+    const ftdUrl = `${domain}/api/postback?event_type=first_deposit&user_id={user_id}&amount={amount}`;
+    const depUrl = `${domain}/api/postback?event_type=recurring_deposit&user_id={user_id}&amount={amount}`;
 
     return (
         <div className="w-full h-full flex flex-col text-gray-800 font-poppins">

@@ -1,4 +1,3 @@
-
 import { kv } from '@vercel/kv';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
@@ -11,118 +10,70 @@ interface UserData {
   predictionsLeft: number;
 }
 
-// Helper function to find a parameter value from a list of possible keys
-const findParam = (query: VercelRequest['query'], aliases: string[]): string | undefined => {
-    for (const alias of aliases) {
-        const value = query[alias];
-        if (value) {
-            const param = Array.isArray(value) ? value[0] : value;
-            // Ensure we don't return an empty string if the parameter is present but empty
-            if (param) return param;
-        }
-    }
-    return undefined;
-};
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const playerIdAliases = ['sub1', 'subid1', 'user_id', 'player_id', 'subid', 'visitor_id'];
-  const eventTypeAliases = ['goal', 'event_type', 'event', 'status'];
-  const amountAliases = ['amount', 'payout', 'revenue'];
+  // Simplified parameter extraction based on standard affiliate macros.
+  const playerId = (req.query.user_id || req.query.sub1) as string | undefined;
+  const eventType = req.query.event_type as string | undefined;
+  const amountStr = req.query.amount as string | undefined;
 
-  let playerId = findParam(req.query, playerIdAliases);
-  let eventType = findParam(req.query, eventTypeAliases);
-  let amountStr = findParam(req.query, amountAliases);
-
-  // Handle Telegram-style 'text' parameter as a fallback/override, based on user feedback from 1win.
-  const textParam = findParam(req.query, ['text']);
-  if (textParam && typeof textParam === 'string') {
-    const parts = textParam.split(':');
-    if (parts.length > 0 && parts[0]) {
-      playerId = parts[0]; // Override playerId if found in text
-    }
-    
-    // For deposits, amount is usually the last part. We check if an eventType is present to infer context.
-    const lowerEventType = eventType?.toLowerCase();
-    const depositEvents = ['first_deposit', 'first-deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'];
-    if (depositEvents.includes(lowerEventType || '')) {
-        if (parts.length > 1) {
-            const potentialAmount = parts[parts.length - 1];
-            // A simple check to see if it's a numeric value.
-            if (potentialAmount && !isNaN(parseFloat(potentialAmount))) {
-                amountStr = potentialAmount; // Override amount if found
-            }
-        }
-    }
+  if (!playerId || typeof playerId !== 'string' || playerId.trim() === '') {
+    console.error('[POSTBACK FAIL] Missing or empty playerId. Query:', req.query);
+    return res.status(400).json({
+        error: 'Required parameter `user_id` or `sub1` is missing or empty. Please ensure your postback URL includes the correct macro from your affiliate panel (e.g., {user_id}).',
+        receivedQuery: req.query
+    });
   }
 
-  if (!playerId || typeof playerId !== 'string') {
-    return res.status(400).json({ error: 'A valid user identifier (e.g., sub1, user_id, or from text param) is required.' });
-  }
+  const trimmedPlayerId = playerId.trim();
 
   try {
-    const key = `user:${playerId}`;
+    const key = `user:${trimmedPlayerId}`;
     let userData: UserData = (await kv.get(key)) || { registered: false, deposit: 0, predictionsLeft: 0 };
     const oldDeposit = userData.deposit;
 
-    // Standardize common affiliate event names, case-insensitively
-    let standardizedEventType = '';
     const lowerEventType = eventType?.toLowerCase();
-    
-    if (lowerEventType === 'registration' || lowerEventType === 'reg') {
-        standardizedEventType = 'registration';
-    } else if (['first_deposit', 'first-deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'].includes(lowerEventType || '')) {
-        standardizedEventType = 'deposit';
-    }
 
-    switch (standardizedEventType) {
-      case 'registration':
+    if (lowerEventType === 'registration') {
         userData.registered = true;
-        console.log(`[POSTBACK] Registration for player: ${playerId}`);
-        break;
-      
-      case 'deposit':
+        console.log(`[POSTBACK] Registration for player: ${trimmedPlayerId}`);
+    } else if (lowerEventType === 'first_deposit' || lowerEventType === 'recurring_deposit') {
         const depositAmount = parseFloat(amountStr || '0');
 
         if (depositAmount > 0) {
             userData.deposit += depositAmount;
-            // A deposit implies the user must be registered.
-            userData.registered = true; 
-            
-            // If the user's total deposit was below the minimum and now it's at or above, grant initial predictions.
+            userData.registered = true; // A deposit implies registration.
+
             if (oldDeposit < MINIMUM_DEPOSIT && userData.deposit >= MINIMUM_DEPOSIT) {
                 userData.predictionsLeft = (userData.predictionsLeft || 0) + PREDICTIONS_AWARDED;
-                console.log(`[POSTBACK] First qualifying deposit for ${playerId}. Awarded ${PREDICTIONS_AWARDED} predictions.`);
-            }
-            // Otherwise, if this is just another deposit on top of an already-qualified account, grant more predictions.
-            else if (oldDeposit >= MINIMUM_DEPOSIT) {
+                console.log(`[POSTBACK] First qualifying deposit for ${trimmedPlayerId}. Awarded ${PREDICTIONS_AWARDED} predictions.`);
+            } else if (oldDeposit >= MINIMUM_DEPOSIT) {
                 userData.predictionsLeft = (userData.predictionsLeft || 0) + PREDICTIONS_AWARDED;
-                 console.log(`[POSTBACK] Subsequent deposit for ${playerId}. Awarded ${PREDICTIONS_AWARDED} more predictions.`);
+                console.log(`[POSTBACK] Subsequent deposit for ${trimmedPlayerId}. Awarded ${PREDICTIONS_AWARDED} more predictions.`);
             }
-            console.log(`[POSTBACK] Deposit (${eventType}) confirmed for player: ${playerId}, Amount: $${depositAmount}, New Total: $${userData.deposit}, Predictions: ${userData.predictionsLeft}`);
+            console.log(`[POSTBACK] Deposit (${eventType}) for ${trimmedPlayerId}, Amount: $${depositAmount}, New Total: $${userData.deposit}, Predictions: ${userData.predictionsLeft}`);
+        } else {
+            console.log(`[POSTBACK] Deposit event received for player: ${trimmedPlayerId}, but amount was missing or invalid: ${amountStr}`);
         }
-        break;
-
-      default:
-        console.log(`[POSTBACK] Received unknown or unhandled event type '${eventType}' for player: ${playerId}`);
-        // We still send a 200 OK to prevent the affiliate network from retrying constantly.
+    } else {
+        console.log(`[POSTBACK] Received unknown or unhandled event type '${eventType}' for player: ${trimmedPlayerId}`);
         return res.status(200).json({ success: true, message: `Unknown event type '${eventType}' received but acknowledged.` });
     }
 
     await kv.set(key, userData);
-    
+
     return res.status(200).json({ success: true, message: 'Postback processed.' });
 
   } catch (error) {
-    console.error(`[POSTBACK ERROR] Error processing postback for Player ID ${playerId}:`, error);
+    console.error(`[POSTBACK ERROR] Error processing postback for Player ID ${trimmedPlayerId}:`, error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
