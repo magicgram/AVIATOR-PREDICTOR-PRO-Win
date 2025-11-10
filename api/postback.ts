@@ -38,12 +38,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const eventTypeAliases = ['goal', 'event_type', 'event', 'status'];
   const amountAliases = ['amount', 'payout', 'revenue'];
 
-  const playerId = findParam(req.query, playerIdAliases);
-  const eventType = findParam(req.query, eventTypeAliases);
-  const amountStr = findParam(req.query, amountAliases);
+  let playerId = findParam(req.query, playerIdAliases);
+  let eventType = findParam(req.query, eventTypeAliases);
+  let amountStr = findParam(req.query, amountAliases);
+
+  // Handle Telegram-style 'text' parameter as a fallback/override, based on user feedback from 1win.
+  const textParam = findParam(req.query, ['text']);
+  if (textParam && typeof textParam === 'string') {
+    const parts = textParam.split(':');
+    if (parts.length > 0 && parts[0]) {
+      playerId = parts[0]; // Override playerId if found in text
+    }
+    
+    // For deposits, amount is usually the last part. We check if an eventType is present to infer context.
+    const lowerEventType = eventType?.toLowerCase();
+    const depositEvents = ['first_deposit', 'first-deposit', 'recurring_deposit', 'dep', 'ftd', 'deposit'];
+    if (depositEvents.includes(lowerEventType || '')) {
+        if (parts.length > 1) {
+            const potentialAmount = parts[parts.length - 1];
+            // A simple check to see if it's a numeric value.
+            if (potentialAmount && !isNaN(parseFloat(potentialAmount))) {
+                amountStr = potentialAmount; // Override amount if found
+            }
+        }
+    }
+  }
 
   if (!playerId || typeof playerId !== 'string') {
-    return res.status(400).json({ error: 'A valid user identifier (e.g., sub1, user_id) is required.' });
+    return res.status(400).json({ error: 'A valid user identifier (e.g., sub1, user_id, or from text param) is required.' });
   }
 
   try {
