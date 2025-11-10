@@ -45,6 +45,30 @@ const CopyableUrl: React.FC<{ url: string }> = ({ url }) => {
     );
 };
 
+const PostbackUrlComponent: React.FC<{
+  title: string;
+  description: string;
+  baseUrl: string;
+  params: Array<{ key: string; value: string; desc: string }>;
+}> = React.memo(({ title, description, baseUrl, params }) => {
+  const url = `${baseUrl}?${params.map(p => `${p.key}=${p.value}`).join('&')}`;
+  
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="font-bold text-gray-800 text-lg">{title}</h3>
+        <p className="text-sm text-gray-600 mt-1 mb-3">{description}</p>
+        <div className="space-y-2 text-sm">
+          {params.map(p => (
+            <div key={p.key}>
+              <p><code className="text-xs bg-red-100 text-red-700 p-1 rounded">{p.key}</code>: {p.desc}</p>
+            </div>
+          ))}
+        </div>
+        <CopyableUrl url={url} />
+    </div>
+  );
+});
+
 const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
     const { t } = useLanguage();
     const [domain, setDomain] = useState('');
@@ -52,11 +76,7 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
     useEffect(() => {
         setDomain(window.location.origin);
     }, []);
-
-    const regUrl = `${domain}/api/postback?event_type=registration&user_id={user_id}`;
-    const ftdUrl = `${domain}/api/postback?event_type=first_deposit&user_id={user_id}&amount={amount}`;
-    const depUrl = `${domain}/api/postback?event_type=recurring_deposit&user_id={user_id}&amount={amount}`;
-
+    
     return (
         <div className="w-full h-full flex flex-col text-gray-800 font-poppins">
             <header className="flex items-center mb-4 flex-shrink-0">
@@ -77,32 +97,75 @@ const PostbackGuide: React.FC<PostbackGuideProps> = ({ onBack }) => {
                         {t('postbackGuideImportant')}: <strong className="font-mono">{domain}</strong>
                     </div>
                 )}
+                
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h2 className="font-bold text-lg text-blue-800">Step 1: Find Your Network's Macros</h2>
+                    <p className="text-sm text-gray-700 mt-2">
+                        In your affiliate panel, find the list of available "macros" or "placeholders". These are special codes that your network replaces with real data. You need to find the macros for:
+                    </p>
+                    <ul className="list-disc list-inside text-sm text-gray-700 mt-2 space-y-1">
+                        <li><strong>User ID:</strong> This is usually <code>{'{user_id}'}</code> or sometimes <code>{'{sub1}'}</code>.</li>
+                        <li><strong>Deposit Amount:</strong> This is almost always <code>{'{amount}'}</code>.</li>
+                    </ul>
+                    <p className="text-sm text-gray-700 mt-2">
+                        The URLs below use these standard macros. If your network uses different ones, you must replace them.
+                    </p>
+                </div>
 
-                <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
-                    <h2 className="font-bold text-gray-800">{t('postbackGuideStep1Title')}</h2>
-                    <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: t('postbackGuideStep1Desc') }} />
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h2 className="font-bold text-lg text-green-800">Step 2: Set Up Your Postback URLs</h2>
+                   <p className="text-sm text-gray-700 mt-2">
+                        Your affiliate panel should have separate sections or fields to set a postback for each event (Registration, First Deposit, etc.). Copy the full URL below and paste it into the correct field.
+                    </p>
                 </div>
 
                 <div className="space-y-4">
-                    <h2 className="text-center font-russo text-lg text-gray-800">{t('postbackGuideStep2Title')}</h2>
-                    
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                        <h3 className="font-bold">{t('postbackGuideRegistrationTitle')}</h3>
-                        <p className="text-sm text-gray-600">{t('postbackGuideRegistrationDesc')}</p>
-                        <CopyableUrl url={regUrl} />
-                    </div>
-                    
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                        <h3 className="font-bold">{t('postbackGuideFtdTitle')}</h3>
-                        <p className="text-sm text-gray-600">{t('postbackGuideFtdDesc')}</p>
-                        <CopyableUrl url={ftdUrl} />
-                    </div>
+                    <PostbackUrlComponent 
+                      title={t('postbackGuideRegistrationTitle')}
+                      description={t('postbackGuideRegistrationDesc')}
+                      baseUrl={`${domain}/api/postback`}
+                      params={[
+                        { key: 'event_type', value: 'registration', desc: 'This tells our app it was a registration. This part is static and you type it exactly as shown.' },
+                        { key: 'user_id', value: '{user_id}', desc: "This is your network's macro for the user's Player ID." }
+                      ]}
+                    />
 
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                        <h3 className="font-bold">{t('postbackGuideDepTitle')}</h3>
-                        <p className="text-sm text-gray-600">{t('postbackGuideDepDesc')}</p>
-                        <CopyableUrl url={depUrl} />
-                    </div>
+                    <PostbackUrlComponent 
+                      title={t('postbackGuideFtdTitle')}
+                      description={t('postbackGuideFtdDesc')}
+                      baseUrl={`${domain}/api/postback`}
+                      params={[
+                        { key: 'event_type', value: 'first_deposit', desc: 'Tells our app it was a first deposit. Type it exactly as shown.' },
+                        { key: 'user_id', value: '{user_id}', desc: "Your network's macro for the Player ID." },
+                        { key: 'amount', value: '{amount}', desc: "Your network's macro for the deposit amount." }
+                      ]}
+                    />
+
+                     <PostbackUrlComponent 
+                      title={t('postbackGuideDepTitle')}
+                      description={t('postbackGuideDepDesc')}
+                      baseUrl={`${domain}/api/postback`}
+                      params={[
+                        { key: 'event_type', value: 'recurring_deposit', desc: 'Tells our app it was another deposit. Type it exactly as shown.' },
+                        { key: 'user_id', value: '{user_id}', desc: "Your network's macro for the Player ID." },
+                        { key: 'amount', value: '{amount}', desc: "Your network's macro for the deposit amount." }
+                      ]}
+                    />
+                </div>
+                
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h2 className="font-bold text-lg text-red-800">Troubleshooting: Still not working?</h2>
+                    <p className="text-sm text-gray-700 mt-2">
+                        If users are still not being registered, try these common fixes:
+                    </p>
+                    <ol className="list-decimal list-inside text-sm text-gray-700 mt-2 space-y-2">
+                        <li>
+                            <strong>Check the Player ID macro:</strong> In your affiliate link setup (the one you give to users), make sure you are passing the Player ID correctly. Many platforms require you to set this in a parameter like `sub1`. If you set it as `sub1=PLAYER_ID`, then your postback macro for the ID might be <code>{'{sub1}'}</code> instead of <code>{'{user_id}'}</code>. Try replacing <code>user_id={'{user_id}'}</code> with <code>user_id={'{sub1}'}</code> in the URLs above.
+                        </li>
+                        <li>
+                            <strong>Check the event type parameter:</strong> Some networks use `event` instead of `event_type`. Our server now accepts both, but try changing `event_type=registration` to `event=registration` in your URL if the first option doesn't work.
+                        </li>
+                    </ol>
                 </div>
             </div>
         </div>
