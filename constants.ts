@@ -19,7 +19,10 @@
 // AFFILIATE LINK CONFIGURATION
 // =================================================================================
 //
-// The affiliate link is now configured directly in the API code.
-// To change it, edit the file located at: `/api/redirect.ts`
+// The affiliate link is now configured via an environment variable on Vercel.
+// To change it, go to your project settings on Vercel, navigate to the
+// "Environment Variables" section, and set the value for `AFFILIATE_LINK`.
+//
+// The code that uses this variable is in: `/api/redirect.ts`
 //
 // =================================================================================
